@@ -1,0 +1,15 @@
+/* This project uses Twitter-Bootstrap */
+html {
+  height: 100%;
+}
+body { 
+  background: linear-gradient(135deg, #e4e4d9 0%, #215f00 100%); 
+  height: 100%;
+  margin: 0;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+button:active {
+  transform: translate(0px, 2px);
+  box-shadow: none;
+}

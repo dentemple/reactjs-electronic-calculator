@@ -1,0 +1,310 @@
+class App extends React.Component {
+  render () { return <Calculator /> }
+}
+
+class Calculator extends React.Component {
+  constructor (props) {
+    super(props)
+    this.state = {
+      negative: false,
+      pressed: '',
+      output: '',
+      chained: '',
+      operation: '',
+      operations: [],
+      modifiers: []
+    }
+    this.handlePress = this.handlePress.bind(this)
+    this.handleNegative = this.handleNegative.bind(this)
+    this.determineOutput = this.determineOutput.bind(this)
+    this.determineChained = this.determineChained.bind(this)
+    this.determineOperation = this.determineOperation.bind(this)
+    this.parseChain = this.parseChain.bind(this)
+    this.isNumeric = this.isNumeric.bind(this)
+  }
+  componentWillMount () {
+    this.setState({
+      negative: false,
+      pressed: '',
+      output: '0',
+      chained: '',
+      operation: '',
+      operations: ['+', '-', '*', '/'],
+      modifiers: ['.', 'n']
+    })
+  }
+  handlePress (event) {
+    const newPress = event.target.value
+    this.setState({
+      pressed: newPress,
+      negative: this.handleNegative(
+        newPress,
+        this.state.negative
+      ),
+      output: this.determineOutput(
+        newPress, 
+        this.state.output, 
+        this.state.chained, 
+        this.state.operation,
+        this.state.negative,
+        this.state.percentage
+      ),
+      chained: this.determineChained(
+        newPress, 
+        this.state.output, 
+        this.state.chained, 
+        this.state.operation,
+        this.state.negative,
+        this.state.percentage
+      ),
+      operation: this.determineOperation(newPress)
+    })
+  }
+  handleNegative (pressed, previous) {
+    if('n' === pressed) { 
+      return !previous 
+    }
+  }
+  determineOutput (pressed, output, chained, operation, negative, percentage) {
+    if ('ac' === pressed || 'ce' === pressed) {
+      return ''
+    } else if ('.' === pressed) {
+      return output.includes('.') ? output : output + pressed
+    } else if (this.isNumeric(pressed)) {
+      return output === '0' ? pressed : output + pressed
+    } else if (this.state.operations.indexOf(pressed) >= 0) {
+      return ''
+    } else if ('=' === pressed) {
+      return ''
+    } else {
+      return output
+    }
+  }
+  determineChained (pressed, output, chained, operation, negative, percentage) {
+    const adjOutput = Number(output).toString() //Removes leading zeroes
+    const val = negative ? (
+      percentage ? `-${adjOutput}%` : `-${adjOutput}`
+      ) : (
+      percentage ? `${adjOutput}%` : adjOutput
+    )
+    if ('ac' === pressed) {
+      return ''
+    } else if ('' === pressed) {
+      return chained
+    } else if ('ce' === pressed || this.isNumeric(pressed) || this.state.modifiers.indexOf(pressed) >= 0 ) {
+      return '=' === operation ? '' : chained
+    } else if ('=' === pressed) {
+      return this.parseChain(val, chained)
+    } else {
+      return chained ? chained + val + pressed : val + pressed
+    }
+  }
+  determineOperation (pressed) {
+    if (this.state.operations.indexOf(pressed) >= 0) {
+      return pressed
+    } else if ('ac' === pressed) {
+      return ''
+    } else if ('=' === pressed) {
+      return '='
+    } else {
+      return ''
+    }
+  }
+  parseChain (output, chained) {
+    return eval(chained + output)
+  }
+  isNumeric (n) {
+    return !isNaN(parseFloat(n)) && isFinite(n)
+  }
+  render () {
+    const calculatorStyle = {
+      fontFamily: 'monospace',
+      margin: 'auto',
+      width: 300,
+      textAlign: 'center',
+      marginTop: 40,
+      borderRadius: '20',
+      border: '1px solid #444',
+      boxShadow: '0 -10px 50px #777 inset',
+      backgroundColor: '#dfd8d0'
+    }
+    return (
+      <div className="well well-sm" style={ calculatorStyle }>
+        <Header text='Electronic Calculator' />
+        <OutputsWrapper 
+          output={ this.state.output }
+          chained={ this.state.chained}
+          operation={ this.state.operation }
+          negative={ this.state.negative} />
+        <Keys 
+          onPress={ this.handlePress } />
+        <Footer text='Den Temple | Powered by ReactJS' />
+      </div>
+    )
+  }
+}
+
+class Keys extends React.Component {
+  render () {
+    return (
+      <div>
+        <Row>
+          <Key onPress={ this.props.onPress } pressed='ac' symbol='ac' />
+          <Key onPress={ this.props.onPress } pressed='ce' symbol='ce' />
+          <Key onPress={ this.props.onPress } pressed='n' symbol='&plusmn;' />
+          <Key onPress={ this.props.onPress } pressed='/' symbol='&divide;' />
+        </Row>
+        <Row>
+          <Key onPress={ this.props.onPress } pressed='7' symbol='7' />
+          <Key onPress={ this.props.onPress } pressed='8' symbol='8' />
+          <Key onPress={ this.props.onPress } pressed='9' symbol='9' />
+          <Key onPress={ this.props.onPress } pressed='*' symbol='x' />
+        </Row>
+        <Row>
+          <Key onPress={ this.props.onPress } pressed='4' symbol='4' />
+          <Key onPress={ this.props.onPress } pressed='5' symbol='5' />
+          <Key onPress={ this.props.onPress } pressed='6' symbol='6' />
+          <Key onPress={ this.props.onPress } pressed='-' symbol='-' />
+        </Row>
+        <Row>
+          <Key onPress={ this.props.onPress } pressed='1' symbol='1' />
+          <Key onPress={ this.props.onPress } pressed='2' symbol='2' />
+          <Key onPress={ this.props.onPress } pressed='3' symbol='3' />
+          <Key onPress={ this.props.onPress } pressed='+' symbol='+' />
+        </Row>
+        <Row>
+          <Key onPress={ this.props.onPress } pressed='0' symbol='0' />
+          <Key onPress={ this.props.onPress } pressed='00' symbol='00' />
+          <Key onPress={ this.props.onPress } pressed='.' symbol='.' />
+          <Key onPress={ this.props.onPress } pressed='=' symbol='=' />
+        </Row>
+      </div>
+    )
+  }
+}
+
+class Key extends React.Component {
+  render () {
+    const keyStyle = {
+      fontSize: 16,
+      fontWeight: 'bold',
+      borderRadius: 5,
+      margin: 5,
+      height: 50,
+      width: 50,
+      boxShadow: '0px 3px 0px 0px #222121, inset -1px -3px 10px 1px #515151'
+    }
+    return (
+      <button 
+        className="btn btn-primary raised" 
+        style={ keyStyle }
+        onClick={ this.props.onPress }
+        value={ this.props.pressed }>
+        { this.props.symbol }
+      </button>
+    )
+  }
+}
+
+class OutputsWrapper extends React.Component {
+  render () {
+    const outputStyle = {
+      padding: '0 auto',
+      margin: '0 auto',
+      textAlign: 'right',
+      width: '80%',
+    }
+    return (
+      <div style={ outputStyle }>
+        <MainWindow 
+          main={ this.props.output }
+          negative={ this.props.negative }
+          addon={ this.props.operation }/>
+        <SubWindow show={ this.props.chained } />
+      </div>
+    )
+  }
+}
+
+class MainWindow extends React.Component {
+  render () {
+    const outputStyle = {
+      padding: '0 auto',
+      margin: '0 auto',
+    }
+    return (
+      <div className='input-group' style={ outputStyle }>
+        <AddonOutput 
+          show={ this.props.addon } />
+        <MainOutput 
+          show={ this.props.main }
+          negative={ this.props.negative } />
+      </div>
+    )
+  }
+}
+
+class AddonOutput extends React.Component {
+  render () {
+    const outputStyle = {
+      backgroundColor: '#FFF',
+    }
+    return (
+      <span className='input-group-addon' style={ outputStyle }>
+        { this.props.show }
+      </span>
+    )
+  }
+}
+
+class MainOutput extends React.Component {
+  printValue () {
+    const val = this.props.show
+    const chars = 15
+    return val.length > chars ? val.substr(val.length - chars) : val
+  }
+  render () {
+    return (
+      <div className='form-control input-lg'>
+        { this.props.negative ? '-' : '' }{ this.printValue() }
+      </div>
+    )
+  }
+}
+
+class SubWindow extends React.Component {
+  printValue () {
+    const val = this.props.show
+    const chars = 30
+    return val.length > chars ? val.substr(val.length - chars) : val
+  }
+  render () {
+    return (
+      <div className='form-control input-sm'>
+        { this.printValue() }
+      </div>
+    )
+  }
+}
+
+class Row extends React.Component {
+  render () {
+    return (
+      <div className="row">
+        <div className="col-xs-12">
+          { this.props.children }
+        </div>
+      </div>
+    )
+  }
+}
+
+function Header (props) {
+  return <h4>{props.text}</h4>
+}
+
+function Footer (props) {
+  return <h6>{props.text}</h6>
+}
+
+ReactDOM.render(<App />, document.getElementById('app'));
